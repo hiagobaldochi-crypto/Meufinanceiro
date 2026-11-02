@@ -1,7 +1,7 @@
 // Service worker mínimo: guarda a "casca" do app para abrir mesmo sem internet
 // (o conteúdo em si vem do Apps Script e precisa de conexão).
-const CACHE = 'financas-shell-v1';
-const ARQUIVOS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
+const CACHE = 'financas-shell-v2';
+const ARQUIVOS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting()));
