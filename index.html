@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Finanças</title>
+  <meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d1320" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Finanças">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+  <style>
+    :root { --bg: #eef1f5; --ink: #131c2b; --muted: #5d6b7e; --brand: #1b2a49; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0d1320; --ink: #eef2f8; --muted: #93a1ba; --brand: #7b8cff; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); }
+    body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); overflow: hidden; }
+
+    /* O iframe ocupa a tela toda; a faixa do topo (barra de status) fica por conta desta página */
+    #app { position: fixed; inset: 0; border: 0; width: 100%; height: 100%; background: var(--bg);
+           padding-top: env(safe-area-inset-top); }
+    body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: var(--bg); z-index: 5; }
+
+    #splash, #offline { position: fixed; inset: 0; z-index: 10; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px; text-align: center; }
+    #splash img { width: 96px; height: 96px; border-radius: 24px; }
+    .bar { width: 120px; height: 4px; border-radius: 4px; background: rgba(128,140,160,.25); overflow: hidden; }
+    .bar::before { content: ''; display: block; height: 100%; width: 40%; background: var(--brand); animation: slide 1s ease-in-out infinite; }
+    @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+    #offline h1 { font-size: 20px; }
+    #offline p { color: var(--muted); max-width: 300px; font-size: 15px; }
+    button { font: inherit; font-weight: 700; padding: 14px 22px; border: 0; border-radius: 14px; background: var(--brand); color: #fff; touch-action: manipulation; }
+    @media (prefers-color-scheme: dark) { button { color: #0d1320; } }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: reduce) { .bar::before { animation: none; } }
+  </style>
+</head>
+<body>
+
+  <div id="splash">
+    <img src="icons/icon-192.png" alt="Finanças">
+    <div class="bar"></div>
+  </div>
+
+  <div id="offline" hidden>
+    <img src="icons/icon-192.png" alt="" width="72" height="72" style="border-radius:18px">
+    <h1 id="off-titulo">Sem conexão</h1>
+    <p id="off-texto">Conecte-se à internet para ver seus lançamentos.</p>
+    <button id="btn-tentar" type="button">Tentar de novo</button>
+  </div>
+
+  <iframe id="app" title="Finanças" allow="clipboard-write" referrerpolicy="no-referrer"></iframe>
+
+<script>
+  // >>> COLE AQUI o link da sua implantação do Apps Script (termina em /exec) <<<
+  const APP_URL = "COLE_AQUI_O_LINK_/exec";
+
+  const frame = document.getElementById('app');
+  const splash = document.getElementById('splash');
+  const offline = document.getElementById('offline');
+  let timer;
+
+  function mostrarErro(titulo, texto) {
+    clearTimeout(timer);
+    splash.hidden = true;
+    document.getElementById('off-titulo').textContent = titulo;
+    document.getElementById('off-texto').textContent = texto;
+    offline.hidden = false;
+  }
+
+  function abrir() {
+    if (APP_URL.indexOf('/exec') === -1) {
+      mostrarErro('Link não configurado', 'Edite o arquivo index.html e cole o link /exec do Apps Script na constante APP_URL.');
+      return;
+    }
+    if (!navigator.onLine) {
+      mostrarErro('Sem conexão', 'Conecte-se à internet para ver seus lançamentos.');
+      return;
+    }
+    offline.hidden = true;
+    splash.hidden = false;
+    clearTimeout(timer);
+    // se em 25s nada carregar, avisa em vez de ficar travado
+    timer = setTimeout(() => mostrarErro('Demorou demais', 'Não consegui abrir o app. Verifique a conexão e tente de novo.'), 25000);
+    frame.src = APP_URL;
+  }
+
+  frame.addEventListener('load', () => {
+    if (frame.src && frame.src !== 'about:blank') { clearTimeout(timer); splash.hidden = true; }
+  });
+
+  document.getElementById('btn-tentar').addEventListener('click', abrir);
+  window.addEventListener('online', abrir);
+  window.addEventListener('offline', () => mostrarErro('Sem conexão', 'Conecte-se à internet para ver seus lançamentos.'));
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+
+  abrir();
+</script>
+</body>
+</html>
